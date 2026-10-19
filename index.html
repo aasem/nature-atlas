@@ -3176,13 +3176,19 @@ const editing=new Set();
 const cur=n=>(n in LOCAL)?LOCAL[n]:(BASE[n]||"");
 const isLocal=n=>(n in LOCAL)&&LOCAL[n]!==(BASE[n]||"");
 function saveLocal(){try{localStorage.setItem("natReadings",JSON.stringify(LOCAL))}catch(_){}}
+/* Readings may use <i>, <em>, <b> and <strong>; everything else is shown as typed. */
+function fmt(p){
+  let h=esc(p).replace(/&lt;(\/?)(i|em|b|strong)&gt;/gi,(m,c,t)=>"<"+c+t.toLowerCase()+">");
+  const open=[];h.replace(/<(\/?)(i|em|b|strong)>/g,(m,c,t)=>{if(c){const k=open.lastIndexOf(t);if(k>-1)open.splice(k,1)}else open.push(t);return m});
+  return h+open.reverse().map(t=>"</"+t+">").join("");
+}
 function mineHTML(n){
   const id=slug(n),t=cur(n);
   if(editing.has(n))return `<div class="mine"><div class="hd"><b>${esc(poss(NAME))}</b></div>
     <label for="rd-${id}" hidden>${esc(poss(NAME))} of ${esc(n)}</label>
     <textarea id="rd-${id}" data-n="${esc(n)}">${esc(t)}</textarea>
     <div class="btns"><button class="btn pri" data-act="save" data-n="${esc(n)}">Save</button><button class="btn" data-act="cancel" data-n="${esc(n)}">Cancel</button></div></div>`;
-  const paras=t.trim()?t.trim().split(/\n\s*\n/).map(p=>`<p>${esc(p)}</p>`).join(""):"<p>No reading yet.</p>";
+  const paras=t.trim()?t.trim().split(/\n\s*\n/).map(p=>`<p>${fmt(p)}</p>`).join(""):"<p>No reading yet.</p>";
   return `<div class="mine"><div class="hd"><b>${esc(poss(NAME))}</b>${isLocal(n)?`<span class="local">edited on this device</span>`:""}</div>
     <div class="txt${t.trim()?"":" empty"}">${paras}</div>
     <div class="btns"><button class="btn" data-act="edit" data-n="${esc(n)}">Edit</button>${isLocal(n)?`<button class="btn" data-act="revert" data-n="${esc(n)}">Revert to file</button>`:""}</div></div>`;
